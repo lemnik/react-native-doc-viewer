@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+
 import android.support.v4.content.FileProvider;
 
 import android.content.ActivityNotFoundException;
@@ -45,61 +46,64 @@ import android.util.Log;
 import android.webkit.WebView;
 
 public class RNReactNativeDocViewerModule extends ReactContextBaseJavaModule {
-  public static final int ERROR_NO_HANDLER_FOR_DATA_TYPE = 53;
-  public static final int ERROR_FILE_NOT_FOUND = 2;
-  public static final int ERROR_UNKNOWN_ERROR = 1;
-  private final ReactApplicationContext reactContext;
+    public static final String LOG_TAG = "RNDocViewer";
 
-  public RNReactNativeDocViewerModule(ReactApplicationContext reactContext) {
-    super(reactContext);
-    this.reactContext = reactContext;
-  }
+    public static final int ERROR_NO_HANDLER_FOR_DATA_TYPE = 53;
+    public static final int ERROR_FILE_NOT_FOUND = 2;
+    public static final int ERROR_UNKNOWN_ERROR = 1;
+    private final ReactApplicationContext reactContext;
 
-  @Override
-  public String getName() {
-    return "RNReactNativeDocViewer";
-  }
+    public RNReactNativeDocViewerModule(ReactApplicationContext reactContext) {
+        super(reactContext);
+        this.reactContext = reactContext;
+    }
 
-  @ReactMethod
-  public void openDoc(ReadableArray args, Callback callback) {
-      final ReadableMap arg_object = args.getMap(0);
-      try {
-        if (arg_object.getString("url") != null && arg_object.getString("fileName") != null) {
-            // parameter parsing
-            final String url = arg_object.getString("url");
-            final String fileName =arg_object.getString("fileName");
-            // Begin the Download Task
-            new FileDownloaderAsyncTask(callback, url, fileName).execute();
-        }else{
-            callback.invoke(false);
-        }
-       } catch (Exception e) {
+    @Override
+    public String getName() {
+        return "RNReactNativeDocViewer";
+    }
+
+    @ReactMethod
+    public void openDoc(ReadableArray args, Callback callback) {
+        final ReadableMap arg_object = args.getMap(0);
+        try {
+            if (arg_object.getString("url") != null && arg_object.getString("fileName") != null) {
+                // parameter parsing
+                final String url = arg_object.getString("url");
+                final String fileName = arg_object.getString("fileName");
+                // Begin the Download Task
+                new FileDownloaderAsyncTask(callback, url, fileName).execute();
+            } else {
+                callback.invoke(false);
+            }
+        } catch (Exception e) {
             callback.invoke(e.getMessage());
-       }
-  }
-
-
-  @ReactMethod
-  public void openDocb64(ReadableArray args, Callback callback) {
-      final ReadableMap arg_object = args.getMap(0);
-      try {
-        if (arg_object.getString("base64") != null && arg_object.getString("fileName") != null && arg_object.getString("fileType") != null) {
-            // parameter parsing
-            final String base64 = arg_object.getString("base64");
-            final String fileName =arg_object.getString("fileName");
-            final String fileType =arg_object.getString("fileType");
-            // Begin the Download Task
-            //new FileDownloaderAsyncTask(callback, url, fileName).execute();
-        }else{
-            callback.invoke(false);
         }
-       } catch (Exception e) {
+    }
+
+
+    @ReactMethod
+    public void openDocb64(ReadableArray args, Callback callback) {
+        final ReadableMap arg_object = args.getMap(0);
+        try {
+            if (arg_object.getString("base64") != null && arg_object.getString("fileName") != null && arg_object.getString("fileType") != null) {
+                // parameter parsing
+                final String base64 = arg_object.getString("base64");
+                final String fileName = arg_object.getString("fileName");
+                final String fileType = arg_object.getString("fileType");
+                // Begin the Download Task
+                //new FileDownloaderAsyncTask(callback, url, fileName).execute();
+            } else {
+                callback.invoke(false);
+            }
+        } catch (Exception e) {
             callback.invoke(e.getMessage());
-       }
-  }
+        }
+    }
 
     // used for all downloaded files, so we can find and delete them again.
     private final static String FILE_TYPE_PREFIX = "PP_";
+
     /**
      * downloads the file from the given url to external storage.
      *
@@ -130,7 +134,7 @@ public class RNReactNativeDocViewerModule extends ReactContextBaseJavaModule {
             String extension = MimeTypeMap.getFileExtensionFromUrl(url);
             if (extension.equals("")) {
                 extension = "pdf";
-                System.out.println("extension (default): " + extension);
+                Log.d(LOG_TAG, "extension (default): " + extension);
             }
 
             Context context = getReactApplicationContext().getBaseContext();
@@ -139,7 +143,7 @@ public class RNReactNativeDocViewerModule extends ReactContextBaseJavaModule {
                     outputDir);
             // make sure the receiving app can read this file
             f.setReadable(true, false);
-            System.out.println(f.getPath());
+            Log.d(LOG_TAG, "Tempfile: " + f.getPath());
             FileOutputStream outStream = new FileOutputStream(f);
 
             byte[] buffer = new byte[1024];
@@ -151,9 +155,7 @@ public class RNReactNativeDocViewerModule extends ReactContextBaseJavaModule {
             reader.close();
             outStream.close();
             if (f.exists()) {
-                System.out.println("File exists");
-            } else {
-                System.out.println("File doesn't exist");
+                Log.d(LOG_TAG, "File exists: " + f);
             }
             return f;
 
@@ -167,7 +169,8 @@ public class RNReactNativeDocViewerModule extends ReactContextBaseJavaModule {
             return null;
         }
     }
-     /**
+
+    /**
      * Returns the MIME Type of the file by looking at file name extension in
      * the URL.
      *
@@ -183,23 +186,23 @@ public class RNReactNativeDocViewerModule extends ReactContextBaseJavaModule {
             mimeType = mime.getMimeTypeFromExtension(extension);
         }
 
-        System.out.println("Mime Type: " + mimeType);
+        Log.d(LOG_TAG, "Mime Type: " + mimeType);
 
         if (mimeType == null) {
             mimeType = "application/pdf";
-            System.out.println("Mime Type (default): " + mimeType);
+            Log.d(LOG_TAG, "Mime Type (default): " + mimeType);
         }
 
         return mimeType;
     }
 
-  private class FileDownloaderAsyncTask extends AsyncTask<Void, Void, File> {
+    private class FileDownloaderAsyncTask extends AsyncTask<Void, Void, File> {
         private final Callback callback;
         private final String url;
         private final String fileName;
 
         public FileDownloaderAsyncTask(Callback callback,
-                String url, String fileName) {
+                                       String url, String fileName) {
             super();
             this.callback = callback;
             this.url = url;
@@ -231,9 +234,13 @@ public class RNReactNativeDocViewerModule extends ReactContextBaseJavaModule {
                 return;
             }
             try {
-                Uri contentUri = FileProvider.getUriForFile(context, "com.reactlibrary.provider", result);
-                System.out.println("ContentUri");
-                System.out.println(contentUri);
+                Uri contentUri = FileProvider.getUriForFile(
+                        context,
+                        context.getApplicationContext().getPackageCodePath(),
+                        result
+                );
+
+                Log.d(LOG_TAG, "ContentUri: " + contentUri);
 
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setDataAndType(contentUri, mimeType);
@@ -254,8 +261,7 @@ public class RNReactNativeDocViewerModule extends ReactContextBaseJavaModule {
         }
 
         private void activityNotFoundMessage(String message) {
-            System.out.println("ERROR");
-            System.out.println(message);
+            Log.e(LOG_TAG, "ERROR: " + message);
             callback.invoke(message);
             //e.printStackTrace();
         }
