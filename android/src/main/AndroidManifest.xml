@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.reactlibrary">
  <application>
      <provider
-         android:name="android.support.v4.content.FileProvider"
+         android:name="com.reactlibrary.DocViewerFileProvider"
          android:authorities="${applicationId}.docviewer"
          android:exported="false"
          android:grantUriPermissions="true">
